@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tor-dice
+  namespace: tor-dice
+  labels:
+    app.kubernetes.io/name: tor-dice
+    app.kubernetes.io/part-of: homelab-app
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: tor-dice
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP

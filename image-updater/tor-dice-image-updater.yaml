@@ -1,0 +1,33 @@
+# ImageUpdater CR for tor-dice.
+#
+# Distributed location per architecture/applicationset-patterns.md
+# (in homelab repo): IU CRDs live next to their app's deploy
+# manifests, enrolled via the image-updater-apps ApplicationSet in
+# argocd-projects.
+#
+# Watches harbor.sirddail.net/ai/tor-dice for semver release tags
+# (bare X.Y.Z; no `v` per canonical homelab style — git tags use v,
+# image tags don't, see feedback_git_tag_vs_image_tag_convention).
+# Tags are created by docker-release.yaml in tor-dice-docker on every
+# GitHub release publish.
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: tor-dice-iu
+spec:
+  namespace: argocd
+  applicationRefs:
+    - namePattern: "tor-dice"
+      useAnnotations: false
+      images:
+        - alias: "tor-dice"
+          imageName: "harbor.sirddail.net/ai/tor-dice:0.x"
+          commonUpdateSettings:
+            pullSecret: "pullsecret:tor-dice/tor-dice-harbor-pull"
+            forceUpdate: false
+      writeBackConfig:
+        method: "git"
+        gitConfig:
+          repository: "https://github.com/dvystrcil/tor-dice.git"
+          branch: "main"
+          writeBackTarget: "kustomization:/base"
