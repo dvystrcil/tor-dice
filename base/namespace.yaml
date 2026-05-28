@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tor-dice
+  labels:
+    app.kubernetes.io/part-of: homelab-app
+    # The gateway-services chart's HTTPRoute selector requires the
+    # ambient label so istio can route from istio-system to the
+    # Service in this namespace. Same convention every other
+    # gateway-routed service uses (rpg-dice-mcp, wiki-mcp, n8n, etc.).
+    istio.io/dataplane-mode: ambient

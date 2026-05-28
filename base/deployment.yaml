@@ -1,0 +1,89 @@
+# tor-dice Deployment.
+#
+# Single-replica Go binary + embedded Svelte SPA. The browser talks
+# only to this service (same-origin via the gateway-services HTTPRoute);
+# the Go process maintains an MCP session to rpg-dice-mcp for dice
+# resolution. Stateless — roll history is localStorage on the client.
+#
+# Health endpoint: /healthz (separate from /api/* which only accepts
+# POST + JSON, and / which serves the SPA). Same /healthz convention
+# as the rpg-dice-mcp sibling.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tor-dice
+  namespace: tor-dice
+  labels:
+    app.kubernetes.io/name: tor-dice
+    app.kubernetes.io/part-of: homelab-app
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tor-dice
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tor-dice
+        app.kubernetes.io/part-of: homelab-app
+    spec:
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: tor-dice-harbor-pull
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: tor-dice
+          image: harbor.sirddail.net/ai/tor-dice:dev
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: TOR_DICE_LISTEN
+              value: ":8080"
+            - name: TOR_DICE_MCP_URL
+              # In-cluster MCP endpoint. rpg-dice-mcp Service is at
+              # http://rpg-dice-mcp.rpg-dice-mcp.svc.cluster.local:8080
+              # — note port 8080 since that's what the Service exposes.
+              # The /mcp path is the Streamable HTTP endpoint.
+              value: "http://rpg-dice-mcp.rpg-dice-mcp.svc.cluster.local:8080/mcp"
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "10m"
+            limits:
+              # Per feedback_unbounded_pods_are_node_killers — always
+              # set memory limits. The Go binary plus embedded SPA is
+              # well under 30 MiB; 128Mi is generous for the embedded
+              # FS + MCP session buffers + connection retries.
+              memory: "128Mi"
+              cpu: "300m"
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            failureThreshold: 30
+            periodSeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
