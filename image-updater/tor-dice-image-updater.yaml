@@ -30,4 +30,4 @@ spec:
         gitConfig:
           repository: "https://github.com/dvystrcil/tor-dice.git"
           branch: "main"
-          writeBackTarget: "kustomization:/base"
+          writeBackTarget: "kustomization:/overlays"
