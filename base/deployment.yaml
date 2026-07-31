@@ -55,17 +55,15 @@ spec:
               # — note port 8080 since that's what the Service exposes.
               # The /mcp path is the Streamable HTTP endpoint.
               value: "http://rpg-dice-mcp.rpg-dice-mcp.svc.cluster.local:8080/mcp"
+          # D-012 (VPA epic homelab#455): requests right-sized from the
+          # Off-mode VPA's measured target. See notes in the PR body.
           resources:
             requests:
-              memory: "32Mi"
-              cpu: "10m"
+              cpu: 25m
+              memory: 250Mi
             limits:
-              # Per feedback_unbounded_pods_are_node_killers — always
-              # set memory limits. The Go binary plus embedded SPA is
-              # well under 30 MiB; 128Mi is generous for the embedded
-              # FS + MCP session buffers + connection retries.
-              memory: "128Mi"
-              cpu: "300m"
+              cpu: 300m
+              memory: 320Mi
           startupProbe:
             httpGet:
               path: /healthz
