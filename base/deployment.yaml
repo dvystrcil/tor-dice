@@ -11,13 +11,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    reloader.stakater.com/auto: "true"
   name: tor-dice
   namespace: tor-dice
   labels:
     app.kubernetes.io/name: tor-dice
     app.kubernetes.io/part-of: homelab-app
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
   revisionHistoryLimit: 2
