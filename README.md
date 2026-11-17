@@ -13,18 +13,17 @@ Tracked: [dvystrcil/homelab#262](https://github.com/dvystrcil/homelab/issues/262
 │   ├── harbor-pull-secret.yaml  InfisicalSecret → docker pull creds
 │   ├── deployment.yaml          single-replica Go binary + embedded SPA
 │   ├── service.yaml             ClusterIP :8080
-│   ├── image-updater-rbac.yaml  Role for IU controller to read pullsecret
+│   ├── vpa.yaml
 │   └── kustomization.yaml
-└── image-updater/
-    └── tor-dice-image-updater.yaml  ImageUpdater CR watching Harbor
+└── overlays/
+    └── kustomization.yaml       the deployed newTag
 ```
 
 ## Image flow
 
 1. tor-dice-docker GitHub release published → docker-release.yaml promotes `:dev` to `:semver` tags
-2. argocd-image-updater scans Harbor every ~3 min, finds new `0.x` tag
-3. IU writes back to this repo's `base/kustomization.yaml` (`newTag: ...`)
-4. Argo syncs the new tag, rolls the pod
+2. Its `deploy` job (release-action's deploy step, homelab#2320) commits the new `newTag` here: straight to main, or as a `deploy/tor-dice-<ver>` PR while tor-dice-docker's `AUTO_DEPLOY` is `false`. It edits only `newTag` lines, never downgrades, and sends a major to a PR.
+3. Argo syncs the new tag, rolls the pod
 
 ## Routing
 
